@@ -107,9 +107,11 @@
         {key:"calm",label:"אני רגועה. כאילו.",reply:"קלטנו את ה\"כאילו\". היא מוזמנת איתך."},
         {key:"messages",label:"לא קראתי את כל ההודעות",reply:"מעולה. זו לא בחינת קבלה. כבר התקבלת."}
       ];
-      const TEXT_KEY="welcome-capsule:v1", VIDEO_KEY="opening-video";
+      const TEXT_KEY="welcome-capsule:v1", VIDEO_KEY="opening-video", PARAMS=new URLSearchParams(location.search);
       const app=document.querySelector("#app"), subtitle=document.querySelector("#subtitle");
-      const state={step:0,draft:{arrival:"",intention:"",createdAt:""},blob:null,videoUrl:"",stream:null,recorder:null,chunks:[],timer:null,seconds:20,message:"",shareMessage:"",sealed:false,reveal:new URLSearchParams(location.search).get("reveal")==="1",opened:false,hold:null};
+      const fresh=PARAMS.get("fresh")==="1";
+      if(fresh){try{localStorage.removeItem(TEXT_KEY);indexedDB.deleteDatabase("welcome-capsule");history.replaceState({},"",location.pathname)}catch{}}
+      const state={step:0,draft:{arrival:"",intention:"",createdAt:""},blob:null,videoUrl:"",stream:null,recorder:null,chunks:[],timer:null,seconds:20,message:"",shareMessage:"",sealed:false,reveal:PARAMS.get("reveal")==="1",opened:false,hold:null};
       try{const saved=localStorage.getItem(TEXT_KEY);if(saved){state.draft=JSON.parse(saved);state.sealed=true}}catch{}
 
       function openDb(){return new Promise((resolve,reject)=>{const req=indexedDB.open("welcome-capsule",1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains("capsules"))req.result.createObjectStore("capsules")};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
@@ -181,7 +183,7 @@
         if(action==="download-card")createStartCard().then(card=>{if(card){downloadBlob(card,"אני-בפנים.png");state.shareMessage="הגלויה ירדה למכשיר."}else state.shareMessage="לא הצלחנו ליצור את הגלויה בדפדפן הזה.";render()});
         if(action==="download-capsule")downloadCapsule();
       }
-      readVideo().then(blob=>{if(blob)setBlob(blob);render()}).catch(render);
+      if(fresh)render();else readVideo().then(blob=>{if(blob)setBlob(blob);render()}).catch(render);
     })();
   </script>
 </body>
